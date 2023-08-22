@@ -84,6 +84,9 @@ EFI_STATUS EFIAPI BootMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
   uint64_t frameBufferBase = mode->FrameBufferBase;
   PrintLn(&buf1[0]);
 
+  int width = mode->Info->HorizontalResolution, height = mode->Info->VerticalResolution;
+  uint64_t pixels_per_scanline = mode->Info->PixelsPerScanLine;
+
   /* Alloc Page Tables */
   UINT64 pml4_addr, pdp_addr, page_dir, actual_page_dir;
   UINT64 kernel_pdp, kernel_page_directory_addr, kernel_page_table_addr;
@@ -214,8 +217,13 @@ EFI_STATUS EFIAPI BootMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
   __asm__ __volatile__("movq %%rax,%%cr3"::"a"(page_tables));
 
   unsigned char *frame_buf = (unsigned char *)(0xffff806000000000 + frameBufferBase);
-  for(int i = 0; i < 128; i++){
-    frame_buf[i] = 0xff;
+  for(int j = 0; j < height; j++){
+    for(int i = 0; i < width; i++){
+      frame_buf[(j * pixels_per_scanline + i) * 4 + 0] = 0xff;
+      frame_buf[(j * pixels_per_scanline + i) * 4 + 1] = 0xff;
+      frame_buf[(j * pixels_per_scanline + i) * 4 + 2] = 0xff;
+      frame_buf[(j * pixels_per_scanline + i) * 4 + 3] = 0xff;
+    }
   }
 
   return EFI_SUCCESS;
